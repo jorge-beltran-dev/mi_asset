@@ -322,12 +322,14 @@ class AssetController extends MiAssetAppController {
 		if (Configure::read()) {
 			$this->Session->setFlash($message);
 		}
-		$File = new File(WWW_ROOT . ltrim($this->params['url']['url'], '/'), true);
-		if (Configure::read()) {
-				if ($message[0] != '/') {
-					$message = "/* $message */";
-				}
-				$File->write($message);
+		if (Configure::read('MiAsset.store')) {
+			$File = new File(WWW_ROOT . ltrim($this->params['url']['url'], '/'), true);
+			if (Configure::read()) {
+					if ($message[0] != '/') {
+						$message = "/* $message */";
+					}
+					$File->write($message);
+			}
 		}
 		$this->_stop();
 	}

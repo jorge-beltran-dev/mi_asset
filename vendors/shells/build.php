@@ -1,5 +1,5 @@
 <?php
-/* SVN FILE: $Id: build.php 1683 2009-10-01 12:42:31Z AD7six $ */
+/* SVN FILE: $Id$ */
 
 /**
  * Short description for build.php
@@ -19,9 +19,9 @@
  * @package       mi_asset
  * @subpackage    mi_asset.vendors.shells
  * @since         v 1.0 (20-May-2009)
- * @version       $Revision: 1683 $
- * @modifiedby    $LastChangedBy: AD7six $
- * @lastmodified  $Date: 2009-10-01 14:42:31 +0200 (Thu, 01 Oct 2009) $
+ * @version       $Revision$
+ * @modifiedby    $LastChangedBy$
+ * @lastmodified  $Date$
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 App::import('MiAsset.MiCompressor');

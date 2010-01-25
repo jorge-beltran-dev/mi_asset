@@ -1,5 +1,5 @@
 <?php
-/* SVN FILE: $Id: mi_compressor.php 2047 2009-12-21 15:43:40Z AD7six $ */
+/* SVN FILE: $Id$ */
 
 /**
  * MiCompressor a class used for shrinking CSS and JS files
@@ -21,9 +21,9 @@
  * @package       mi_asset
  * @subpackage    mi_asset.vendors
  * @since         v 1.0
- * @version       $Revision: 2047 $
- * @modifiedby    $LastChangedBy: AD7six $
- * @lastmodified  $Date: 2009-12-21 16:43:40 +0100 (Mon, 21 Dec 2009) $
+ * @version       $Revision$
+ * @modifiedby    $LastChangedBy$
+ * @lastmodified  $Date$
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
 
@@ -489,6 +489,7 @@ abstract class MiCompressor {
 		}
 		$request .= '.' . $type;
 		$return = MiCompressor::_includeFirst(array(
+			WWW_ROOT . $type . DS . ltrim($request, '/'),
 			WWW_ROOT . ltrim($request, '/'),
 			ltrim($type . '/' . $request, '/'),
 			ltrim($request, '/'),
