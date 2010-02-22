@@ -1246,6 +1246,11 @@ abstract class MiCompressor {
 		ftruncate($fp, 0);
 		fwrite($fp, $string);
 		fclose($fp);
+		exec('php -l ' . escapeshellarg($configFile), $_, $return);
+		if ($return !== 0) {
+			trigger_error('MiCompressor::_populateRequestMap the written config file contains a parse error and has been deleted');
+			unlink($configFile);
+		}
 	}
 
 /**
