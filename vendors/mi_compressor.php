@@ -1,6 +1,4 @@
 <?php
-
-
 /**
  * MiCompressor a class used for shrinking CSS and JS files
  *
@@ -591,9 +589,9 @@ abstract class MiCompressor {
 /**
  * minify method
  *
- * Use the yui compressor lib (ships with jquery, will use the first found yuicompressor*.jar file
- * found) to compress files
+ * Use the yui compressor lib to compress files
  *
+ * @TODO swtich to using http://code.google.com/intl/es/closure/compiler/ for js compression
  * @param string $string
  * @param mixed $filename null
  * @static
@@ -610,39 +608,8 @@ abstract class MiCompressor {
 		if (!$string) {
 			return;
 		}
-		if (!array_key_exists('yuicompressor.jar', MiCompressor::$vendorMap)) {
-			App::import('Vendor', 'Mi.MiCache');
-			MiCompressor::log("Looking for yui compressor");
-			if (class_exists('MiCache')) {
-				$possibilities = MiCache::mi('vendors',
-					null,
-					array('shells'),
-					array(
-						'excludeFolders' => array('shells', 'simpletest'),
-						'extension' => array('jar'),
-						'excludePattern' => false
-					)
-				);
-				foreach($possibilities as $key => $path) {
-					if (preg_match('@yuicompressor.*\.jar$@', $path)) {
-						MiCompressor::$vendorMap['yuicompressor.jar'] = $path;
-						break;
-					}
-				}
-			} else {
-				MiCompressor::log("\tMiCache doesn't exist. Skipping.");
-			}
-			if (!array_key_exists('yuicompressor.jar', MiCompressor::$vendorMap)) {
-				MiCompressor::$vendorMap['yuicompressor.jar'] = false;
-			}
-		}
-
-		if (!MiCompressor::$vendorMap['yuicompressor.jar']) {
-			MiCompressor::log("PROBLEM: skipping compression, no yuicompressor.jar file found");
-			return $string;
-		}
 		$oLength = strlen($string);
-		$lib = MiCompressor::$vendorMap['yuicompressor.jar'];
+		$lib = dirname(__FILE__) . DS . 'yuicompressor.jar';
 		$file = basename($filename);
 		MiCompressor::log("	Minifying $file");
 		if (file_exists($filename)) {
@@ -1245,18 +1212,27 @@ abstract class MiCompressor {
 			return;
 		}
 		if (file_exists($configFile)) {
+			$merge = true;
+		}
+		$fp = fopen($configFile, 'a+');
+		if (!flock($fp, LOCK_EX | LOCK_NB)) {
+			return;
+		}
+		if (!empty($merge)) {
 			include($configFile);
-			$merged = $config['requestMap'];
-			foreach(MiCompressor::$requestMap as $type => $sets) {
-				if (is_array($sets)) {
-					foreach($sets as $set => $values) {
-						$merged[$type][$set] = $values;
+			if (!empty($config)) {
+				$merged = $config['requestMap'];
+				foreach(MiCompressor::$requestMap as $type => $sets) {
+					if (is_array($sets)) {
+						foreach($sets as $set => $values) {
+							$merged[$type][$set] = $values;
+						}
+					} else {
+						$merged[$type] = $sets;
 					}
-				} else {
-					$merged[$type] = $sets;
 				}
+				MiCompressor::$requestMap = $merged;
 			}
-			MiCompressor::$requestMap = $merged;
 		}
 
 		MiCompressor::log('Updating config file');
@@ -1266,11 +1242,10 @@ abstract class MiCompressor {
 			}
 		}
 		ksort(MiCompressor::$requestMap);
-
-		$configFile = APP . MiCompressor::cRead('configFile');
-		$configFile = new File($configFile);
 		$string = "<?php\n\$config['requestMap'] = " . var_export(MiCompressor::$requestMap, true) . ';';
-		$configFile->write($string);
+		ftruncate($fp, 0);
+		fwrite($fp, $string);
+		fclose($fp);
 	}
 
 /**
