@@ -628,9 +628,9 @@ abstract class MiCompressor {
 			MiCompressor::log("\t" . $cmd);
 		}
 
-		exec($cmd, $output, $returnValue);
+		$return = MiCompressor::_exec($cmd, $output);
 
-		if ($returnValue != 0) {
+		if (!$returnValue) {
 			MiCompressor::log("PROBLEM: command failed: \$ $cmd");
 			return $string;
 		}
@@ -900,6 +900,18 @@ abstract class MiCompressor {
 			}
 		}
 		MiCompressor::$requestStack[$type][$package][] = $request;
+	}
+
+/**
+ * exec method
+ *
+ * @param mixed $cmd
+ * @param mixed $out null
+ * @return void
+ * @access protected
+ */
+	protected function _exec($cmd, &$out = null) {
+		return Mi::exec($cmd, $out);
 	}
 
 /**
@@ -1247,7 +1259,7 @@ abstract class MiCompressor {
 		fwrite($fp, $string);
 		fclose($fp);
 		/* Trust in flock
-		exec('php -l ' . escapeshellarg($configFile), $_, $return);
+		   $return = MiCompressor::_exec('php -l ' . escapeshellarg($configFile), $_);
 		if ($return !== 0) {
 			trigger_error('MiCompressor::_populateRequestMap the written config file contains a parse error and has been deleted');
 			unlink($configFile);

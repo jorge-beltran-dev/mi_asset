@@ -1,6 +1,4 @@
 <?php
-
-
 /**
  * Handle requests for css and js files that aren't in the webroot
  *
@@ -257,7 +255,7 @@ class AssetController extends MiAssetAppController {
 			$aFolder = new Folder(dirname($zipPath), true);
 			$zipFile = new File($zipPath);
 			$zipFile->write($out);
-			exec('cd ' . dirname($zipPath) . ' && unzip ' . $zipPath, $out);
+			$this->_exec('cd ' . dirname($zipPath) . ' && unzip ' . $zipPath, $out);
 		} else {
 			$aFolder = new Folder(dirname($zipPath));
 		}
@@ -275,7 +273,7 @@ class AssetController extends MiAssetAppController {
 				unlink(WWW_ROOT . 'js' . DS . 'theme' . DS . 'jquery-ui-1.7.2.custom.css');
 			}
 			if (!empty($downloaded)) {
-				exec('rm -rf ' . $zipPath);
+				$this->_exec('rm -rf ' . $zipPath);
 			}
 			unlink(TMP . 'theme.lock');
 			return true;
@@ -308,6 +306,18 @@ class AssetController extends MiAssetAppController {
 	}
 
 /**
+ * exec method
+ *
+ * @param mixed $cmd
+ * @param mixed $out null
+ * @return true on success, false on failure
+ * @access protected
+ */
+	protected function _exec($cmd, &$out = null) {
+		return Mi::exec($cmd, $out);
+	}
+
+/**
  * missingAsset method
  *
  * @param mixed $message
@@ -328,21 +338,5 @@ class AssetController extends MiAssetAppController {
 			}
 		}
 		$this->_stop();
-	}
-
-/**
- * system method
- *
- * Perform and record a system call
- *
- * @param mixed $command
- * @param mixed $output
- * @return void
- * @access private
- */
-	function __system($command, &$output = null) {
-		$this->log($command, 'system_calls');
-		exec($command, $output, $return);
-		return !$return;
 	}
 }
