@@ -314,6 +314,9 @@ class AssetController extends MiAssetAppController {
  * @access protected
  */
 	protected function _exec($cmd, &$out = null) {
+		if (!class_exists('Mi')) {
+			APP::import('Vendor', 'Mi.Mi');
+		}
 		return Mi::exec($cmd, $out);
 	}
 

@@ -911,6 +911,9 @@ abstract class MiCompressor {
  * @access protected
  */
 	protected function _exec($cmd, &$out = null) {
+		if (!class_exists('Mi')) {
+			APP::import('Vendor', 'Mi.Mi');
+		}
 		return Mi::exec($cmd, $out);
 	}
 
@@ -1280,6 +1283,9 @@ abstract class MiCompressor {
 			$plugins = MiCache::mi('plugins');
 			foreach($plugins as $path => $plugin) {
 				if (is_dir($path . DS . 'webroot')) {
+					if (!class_exists('Mi')) {
+						APP::import('Vendor', 'Mi.Mi');
+					}
 					$files = Mi::files($path . DS . 'webroot', null, '.*\.(css|js)$');
 					foreach($files as $fPath) {
 						$fPath = realpath($fPath);
