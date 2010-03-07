@@ -217,7 +217,7 @@ abstract class MiCompressor {
 		'minify.js' => null,
 		'minify.params' => null, //' --line-break 150',
 		'host' => null,
-		'configFile' => 'tmp/cache/persistent/mi_compressor.php',
+		'configFile' => 'persistent/mi_compressor.php',
 	);
 
 /**
@@ -1203,7 +1203,7 @@ abstract class MiCompressor {
  * @access protected
  */
 	protected static function _populateRequestMap($write = false, $load = null) {
-		$configFile = APP . MiCompressor::cRead('configFile');
+		$configFile = CACHE . MiCompressor::cRead('configFile');
 		if (empty(MiCompressor::$requestMap) || $load) {
 			if (file_exists($configFile)) {
 				include($configFile);
