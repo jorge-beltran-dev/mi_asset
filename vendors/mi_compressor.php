@@ -630,7 +630,7 @@ abstract class MiCompressor {
 
 		$return = MiCompressor::_exec($cmd, $output);
 
-		if (!$returnValue) {
+		if (!$return) {
 			MiCompressor::log("PROBLEM: command failed: \$ $cmd");
 			return $string;
 		}
