@@ -81,6 +81,14 @@ class AssetHelper extends AppHelper {
 	var $__jsViewStack = array();
 
 /**
+ * scriptsView property
+ *
+ * @var mixed null
+ * @access private
+ */
+	var $__scriptsView = null;
+
+/**
  * scripts property
  *
  * @var string
@@ -101,6 +109,7 @@ class AssetHelper extends AppHelper {
 		$this->__cssStack = array();
 		$this->__jsViewStack = $this->__jsStack;
 		$this->__jsStack = array('default' => array());
+		$this->__scriptsView = $this->__scripts;
 	}
 
 /**
@@ -164,21 +173,18 @@ class AssetHelper extends AppHelper {
  * js method
  *
  * Example usage, from anywhere at all:
- * 	$asset->js('this', false);
+ * 	$asset->js('this');
  * 	....
- * 	$asset->js('that', false);
+ * 	$asset->js(array('that', 'and', 'the'));
  * 	...
- * 	$asset->js(array('jquery' => 'plugin1'), false);
- * 	...
- * 	$asset->js(array('jquery' => array('plugin2', 'plugin3')), false);
+ * 	$asset->js('other');
  *
  * In the layout (preferably right at the end), call with no parameters to output:
  * 	echo $asset->out('js');
  *
  * With the given example it would generate a link to /app/js/somehash.js?123 to be picked up
- * by the mi_compressor vendor class. Note that jquery and plugins will always be first if included
+ * by the mi_compressor vendor class. Note that jquery will always be first if included
  *
-*
  * @param mixed $url null
  * @param string $package 'default'
  * @return void
@@ -244,9 +250,6 @@ class AssetHelper extends AppHelper {
 		if (!$this->__cssStack) {
 			return;
 		}
-		if (!isset($this->__RequestHandler)) {
-			$this->__RequestHandler = new RequestHandlerComponent();
-		}
 		if ($sizeLimit === true) {
 			if (!isset($this->__RequestHandler)) {
 				App::import('Component', 'RequestHandler');
@@ -309,8 +312,8 @@ class AssetHelper extends AppHelper {
 			$url = str_replace($this->webroot, '/', $this->url($url));
 			$return[] = $this->Javascript->link($url);
 		}
-		$return[] = $this->__scripts;
-		$this->__scripts = '';
+		$return[] = $this->__scripts . $this->__scriptsView;
+		$this->__scripts = $this->__scriptsView = '';
 		return "\r" . implode("\r", $return) . "\r";
 	}
 }
