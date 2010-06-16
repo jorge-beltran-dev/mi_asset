@@ -1349,7 +1349,9 @@ abstract class MiCompressor {
 		} else {
 			$fingerprint = '';
 		}
-		if ($filename[0] === '/') {
+		if (substr($filename, 0, 4) === 'http') {
+				return $filename;
+		} elseif ($filename[0] === '/') {
 			return "{$filename}{$min}.$type";
 		}
 		return "/$type/$filename{$fingerprint}{$min}.$type";
