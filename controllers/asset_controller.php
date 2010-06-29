@@ -115,6 +115,7 @@ class AssetController extends MiAssetAppController {
 			return trigger_error($message);
 		}
 		if (preg_match('@^/?js/theme@', $url) && $this->_linkTheme()) {
+			touch (WWW_ROOT . $this->params['url']['url']);
 			$this->redirect('/' . ltrim($this->params['url']['url'], '/'));
 		}
 
