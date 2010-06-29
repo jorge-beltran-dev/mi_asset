@@ -114,8 +114,7 @@ class AssetController extends MiAssetAppController {
 			}
 			return trigger_error($message);
 		}
-		if (preg_match('@^/?js/theme@', $url) && $this->_linkTheme()) {
-			touch (WWW_ROOT . $this->params['url']['url']);
+		if (preg_match('@^/?js/theme@', $url) && $this->_linkTheme() && file_exists(WWW_ROOT . $url)) {
 			$this->redirect('/' . ltrim($this->params['url']['url'], '/'));
 		}
 
@@ -137,7 +136,7 @@ class AssetController extends MiAssetAppController {
 			$request = preg_replace('@\.' . $type . '$@', '', $url);
 		}
 		$result = MiCompressor::serve($request, $type);
-		if ($result === false || strpos($result, ' 1 byte')) {
+		if (!trim(preg_replace('@/\*.*\*\/@s', '', $result))) {
 			if ($result) {
 				$message = $result;
 			}
