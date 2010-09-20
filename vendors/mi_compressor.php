@@ -552,7 +552,7 @@ abstract class MiCompressor {
  */
 	public static function log($string = null, $shellObject = null) {
 		if (MiCompressor::$start === null) {
-			MiCompressor::$start = getMicrotime();
+			MiCompressor::$start = microtime(true);
 		}
 		static $log = array();
 		if ($shellObject) {
@@ -571,14 +571,14 @@ abstract class MiCompressor {
 			$log = array_merge($head, $log);
 			$return = "/**\r\n * " . implode("\r\n * ", $log) . "\r\n */\r\n";
 			$log = array();
-			MiCompressor::$start = getMicrotime();
+			MiCompressor::$start = microtime(true);
 			return $return;
 		}
 		if (strpos($string , 'PROBLEM') !== false && class_exists('Object')) {
 			$Object = new Object();
 			$Object->log($string, 'mi_compressor');
 		}
-		$time = getMicrotime() - MiCompressor::$start;
+		$time = microtime(true) - MiCompressor::$start;
 		$msg = str_pad(number_format($time, 3, '.', ''), 6, ' ', STR_PAD_LEFT) . 's ' . $string;
 		if (!empty(MiCompressor::$__Shell)) {
 			MiCompressor::$__Shell->out($msg);
@@ -723,7 +723,7 @@ abstract class MiCompressor {
 		MiCompressor::$loadedFiles = array();
 		MiCompressor::log('Request String: ' . $request);
 
-		$start = getMicrotime();
+		$start = microtime(true);
 
 		if ($type === null) {
 			$type = array_pop(explode('.', $_GET['url']));
