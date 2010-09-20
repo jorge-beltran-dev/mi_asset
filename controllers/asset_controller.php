@@ -103,7 +103,7 @@ class AssetController extends MiAssetAppController {
  * @access public
  */
 	function serve() {
-		$url = $this->params['url']['url'];
+		$url = ltrim($this->params['url']['url'], '/');
 		$message = 'Request for: ' . Router::url('/' . $this->params['url']['url'], true) . ' from ' . $this->referer();
 		$this->autoRender = false;
 
@@ -250,7 +250,7 @@ class AssetController extends MiAssetAppController {
 					'cornerRadiusShadow=8px',
 				'scope' => '',
 				't-name' => 'custom-theme',
-				'ui-version' => '1.7.2',
+				'ui-version' => '1.8.5',
 			));
 			$aFolder = new Folder(dirname($zipPath), true);
 			$zipFile = new File($zipPath);

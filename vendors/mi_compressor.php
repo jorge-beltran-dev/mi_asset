@@ -168,8 +168,8 @@ abstract class MiCompressor {
 					'/js/theme/ui.base',
 					'/js/theme/ui.theme',
 				),
-			'virtual' => true,
-		),
+				'virtual' => true,
+			),
 			'/js/theme/ui.base' => array(
 				'baseDir' => 'jquery.ui/themes/base/',
 				'pattern' => 'ui.base.css',
@@ -217,7 +217,7 @@ abstract class MiCompressor {
 		'minify.js' => null,
 		'minify.params' => null, //' --line-break 150',
 		'host' => null,
-		'configFile' => 'persistent/mi_compressor.php',
+		'cacheFile' => 'persistent/mi_compressor.php',
 	);
 
 /**
@@ -1203,10 +1203,10 @@ abstract class MiCompressor {
  * @access protected
  */
 	protected static function _populateRequestMap($write = false, $load = null) {
-		$configFile = CACHE . MiCompressor::cRead('configFile');
+		$cacheFile = CACHE . MiCompressor::cRead('cacheFile');
 		if (empty(MiCompressor::$requestMap) || $load) {
-			if (file_exists($configFile)) {
-				include($configFile);
+			if (file_exists($cacheFile)) {
+				include($cacheFile);
 				MiCompressor::$requestMap = $config['requestMap'];
 			} else {
 				MiCompressor::$requestMap = array();
@@ -1224,17 +1224,22 @@ abstract class MiCompressor {
 		}
 
 		if (!$write) {
+			if (file_exists(CONFIGS . 'mi_asset.php')) {
+				// while reading for the first time - allow loading a config file which can modify
+				// static public vars
+				require_once CONFIGS . 'mi_asset.php';
+			}
 			return;
 		}
-		if (file_exists($configFile)) {
+		if (file_exists($cacheFile)) {
 			$merge = true;
 		}
-		$fp = fopen($configFile, 'a+');
+		$fp = fopen($cacheFile, 'a+');
 		if (!flock($fp, LOCK_EX | LOCK_NB)) {
 			return;
 		}
 		if (!empty($merge)) {
-			include($configFile);
+			include($cacheFile);
 			if (!empty($config)) {
 				$merged = $config['requestMap'];
 				foreach(MiCompressor::$requestMap as $type => $sets) {
@@ -1262,10 +1267,10 @@ abstract class MiCompressor {
 		fwrite($fp, $string);
 		fclose($fp);
 		/* Trust in flock
-		   $return = MiCompressor::_exec('php -l ' . escapeshellarg($configFile), $_);
+		   $return = MiCompressor::_exec('php -l ' . escapeshellarg($cacheFile), $_);
 		if ($return !== 0) {
 			trigger_error('MiCompressor::_populateRequestMap the written config file contains a parse error and has been deleted');
-			unlink($configFile);
+			unlink($cacheFile);
 		}
 		*/
 	}
