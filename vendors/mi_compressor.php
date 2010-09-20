@@ -265,7 +265,7 @@ abstract class MiCompressor {
 /**
  * settings property
  *
- * Active settings - edit/set/see via MiCompressor::config()
+ * Active settings - edit/set/see via self::config()
  *
  * @var array
  * @access protected
@@ -320,7 +320,7 @@ abstract class MiCompressor {
  * First none-null result encountered wins.
  *
  * Call with multiple paramters naming fallback settings e.g.
- * $debug = MiCompressor::cRead('minify', 'minifyCss', 'Some.Coreapp.setting');
+ * $debug = self::cRead('minify', 'minifyCss', 'Some.Coreapp.setting');
  *
  * @param string $setting 'debug'
  * @static
@@ -328,31 +328,37 @@ abstract class MiCompressor {
  * @access public
  */
 	public static function cRead($setting = 'debug') {
-		if (!MiCompressor::$initialized) {
-			MiCompressor::$initialized = true;
+		if (!self::$initialized) {
+			self::$initialized = true;
 
-			$debug = MiCompressor::cRead('debug');
+			$debug = self::cRead('debug');
 			if ($debug === null) {
 				$debug = Configure::read('debug');
 			}
-			MiCompressor::$settings['debug'] = $debug;
+			self::$settings['debug'] = $debug;
 
-			MiCompressor::cRead('log', 'debug');
+			self::cRead('log', 'debug');
 
-			$store = MiCompressor::cRead('store');
+			$store = self::cRead('store');
 			if ($store === null) {
-				MiCompressor::$settings['store'] = !$debug;
+				self::$settings['store'] = !$debug;
 			}
 
-			$minify = MiCompressor::cRead('minify');
+			$minify = self::cRead('minify');
 			if ($minify === null) {
-				MiCompressor::$settings['minify'] = !$debug;
+				self::$settings['minify'] = !$debug;
 			}
-			$minify = MiCompressor::cRead('minify.css', 'minify');
-			$minify = MiCompressor::cRead('minify.js', 'minify');
+			$minify = self::cRead('minify.css', 'minify');
+			$minify = self::cRead('minify.js', 'minify');
+
+			if (file_exists(CONFIGS . 'mi_asset.php')) {
+				// while reading for the first time - allow loading a config file which can modify
+				// static public vars
+				require_once CONFIGS . 'mi_asset.php';
+			}
 		}
-		if (array_key_exists($setting, MiCompressor::$settings)) {
-			return MiCompressor::$settings[$setting];
+		if (array_key_exists($setting, self::$settings)) {
+			return self::$settings[$setting];
 		}
 
 		$return = Configure::read('MiCompressor.' . $setting);
@@ -362,14 +368,14 @@ abstract class MiCompressor {
 			array_shift($fallbacks);
 			if ($fallbacks) {
 				$return = call_user_func_array(array('MiCompressor', 'cRead'), $fallbacks);
-				return MiCompressor::$settings[$setting] = $return;
+				return self::$settings[$setting] = $return;
 			}
 		}
 
-		if (isset(MiCompressor::$defaultSettings[$setting])) {
-			$return = MiCompressor::$defaultSettings[$setting];
+		if (isset(self::$defaultSettings[$setting])) {
+			$return = self::$defaultSettings[$setting];
 		}
-		return MiCompressor::$settings[$setting] = $return;
+		return self::$settings[$setting] = $return;
 	}
 
 /**
@@ -385,9 +391,9 @@ abstract class MiCompressor {
  */
 	public static function config($settings = array(), $reset = false) {
 		if ($reset) {
-			MiCompressor::$settings = array();
+			self::$settings = array();
 		}
-		return MiCompressor::$settings = array_merge(MiCompressor::$settings, $settings);
+		return self::$settings = array_merge(self::$settings, $settings);
 	}
 
 /**
@@ -423,38 +429,38 @@ abstract class MiCompressor {
  * @access public
  */
 	static function listFiles($request, $type) {
-		MiCompressor::_populateRequestMap();
-		MiCompressor::_populateVendorMap(true);
-		MiCompressor::$requestStack = array();
+		self::_populateRequestMap();
+		self::_populateVendorMap(true);
+		self::$requestStack = array();
 		if (preg_match('@\.min$@', $request)) {
-			MiCompressor::$settings['minify.' . $type] = true;
+			self::$settings['minify.' . $type] = true;
 			$request = preg_replace('@\.min$@', '', $request);
 		} else {
-			MiCompressor::$settings['minify.' . $type] = false;
+			self::$settings['minify.' . $type] = false;
 		}
-		$fingerprint = MiCompressor::_fingerprint();
+		$fingerprint = self::_fingerprint();
 		$request = str_replace($fingerprint, '', $request);
 		$return = false;
-		if (isset(MiCompressor::$requestMap[$type][$request]['direct'])) {
-			$return = MiCompressor::$requestMap[$type][$request]['direct'];
-			$expand = (count($return) > 1 || MiCompressor::cRead('concat'));
+		if (isset(self::$requestMap[$type][$request]['direct'])) {
+			$return = self::$requestMap[$type][$request]['direct'];
+			$expand = (count($return) > 1 || self::cRead('concat'));
 			if ($expand) {
-				$return = MiCompressor::_flatten($return, $type, null, $expand);
+				$return = self::_flatten($return, $type, null, $expand);
 			}
 		}
 		if (!$return) {
 			$path = "$type/$request.$type";
-			if (isset(MiCompressor::$vendorMap[$path])) {
+			if (isset(self::$vendorMap[$path])) {
 				return array($path);
 			}
-			foreach(MiCompressor::$vendorMap as $key => $filename) {
+			foreach(self::$vendorMap as $key => $filename) {
 				if (strpos($key, $path) && preg_match('@' . $path . '$@', $key)) {
 					return array($path);
 				}
 			}
 			return false;
 		}
-		return MiCompressor::_flatten($return, $type, null, false);
+		return self::_flatten($return, $type, null, false);
 	}
 
 /**
@@ -472,7 +478,7 @@ abstract class MiCompressor {
  * @access protected
  */
 	protected static function loadRequest($request = '', $minify = false, $type = 'js') {
-		MiCompressor::$requestStack[] = $request;
+		self::$requestStack[] = $request;
 		if ($type === 'js') {
 			$base = JS;
 		} elseif($type === 'css') {
@@ -482,7 +488,7 @@ abstract class MiCompressor {
 			die;
 		}
 		$request .= '.' . $type;
-		$return = MiCompressor::_includeFirst(array(
+		$return = self::_includeFirst(array(
 			WWW_ROOT . $type . DS . ltrim($request, '/'),
 			WWW_ROOT . ltrim($request, '/'),
 			ltrim($type . '/' . $request, '/'),
@@ -490,18 +496,18 @@ abstract class MiCompressor {
 		), $minify, $type);
 		if (!$return) {
 			if (!$minify) {
-				MiCompressor::log("PROBLEM: $request not found");
+				self::log("PROBLEM: $request not found");
 			}
 			return;
 		}
-		$concat = MiCompressor::cRead('concat');
+		$concat = self::cRead('concat');
 		if ($type === 'css') {
 			if (strpos($request, '/', 1)) {
-				$baseFolder = MiCompressor::$requestMap['urlPrefix'] . dirname($request) . '/';
+				$baseFolder = self::$requestMap['urlPrefix'] . dirname($request) . '/';
 			} else {
 				$baseFolder = null;
 			}
-			if (rtrim($baseFolder, '/') === trim(MiCompressor::$requestMap['urlPrefix'] . '/' . $type, '/')) {
+			if (rtrim($baseFolder, '/') === trim(self::$requestMap['urlPrefix'] . '/' . $type, '/')) {
 				$baseFolder = null;
 			}
 			if (($baseFolder || $concat) && strpos($return, 'import')) {
@@ -513,8 +519,8 @@ abstract class MiCompressor {
 							if ($cssFile[0] !== '/') {
 								$cssFile = $baseFolder . $cssFile;
 							}
-							MiCompressor::log("\t\t$cssFile dependency being loaded");
-							$return .= MiCompressor::loadRequest($cssFile, $minify, 'css');
+							self::log("\t\t$cssFile dependency being loaded");
+							$return .= self::loadRequest($cssFile, $minify, 'css');
 						} elseif ($baseFolder !== dirname($cssFile) . '/') {
 							$replace = str_replace($cssFile, $baseFolder . $cssFile, $matches[0][$i]);
 							$return = str_replace($matches[0][$i], $replace, $return);
@@ -533,7 +539,7 @@ abstract class MiCompressor {
 					}
 				}
 				if ($corrected) {
-					MiCompressor::log("\tAuto corrected url paths in $request prepending $baseFolder");
+					self::log("\tAuto corrected url paths in $request prepending $baseFolder");
 				}
 			}
 		}
@@ -551,15 +557,15 @@ abstract class MiCompressor {
  * @access public
  */
 	public static function log($string = null, $shellObject = null) {
-		if (MiCompressor::$start === null) {
-			MiCompressor::$start = microtime(true);
+		if (self::$start === null) {
+			self::$start = microtime(true);
 		}
 		static $log = array();
 		if ($shellObject) {
-			MiCompressor::$__Shell =& $shellObject;
+			self::$__Shell =& $shellObject;
 		}
 		if ($string === null) {
-			$settings = MiCompressor::$settings;
+			$settings = self::$settings;
 			ksort($settings);
 			foreach ($settings as $k => &$v) {
 				$v = ' ' . str_pad($k, 15, ' ', STR_PAD_RIGHT) . "\t: " . $v;
@@ -571,17 +577,17 @@ abstract class MiCompressor {
 			$log = array_merge($head, $log);
 			$return = "/**\r\n * " . implode("\r\n * ", $log) . "\r\n */\r\n";
 			$log = array();
-			MiCompressor::$start = microtime(true);
+			self::$start = microtime(true);
 			return $return;
 		}
 		if (strpos($string , 'PROBLEM') !== false && class_exists('Object')) {
 			$Object = new Object();
 			$Object->log($string, 'mi_compressor');
 		}
-		$time = microtime(true) - MiCompressor::$start;
+		$time = microtime(true) - self::$start;
 		$msg = str_pad(number_format($time, 3, '.', ''), 6, ' ', STR_PAD_LEFT) . 's ' . $string;
-		if (!empty(MiCompressor::$__Shell)) {
-			MiCompressor::$__Shell->out($msg);
+		if (!empty(self::$__Shell)) {
+			self::$__Shell->out($msg);
 		}
 		$log[] = $msg;
 	}
@@ -599,11 +605,11 @@ abstract class MiCompressor {
  * @access public
  */
 	public static function minify($string, $filename = null) {
-		if (MiCompressor::$__NumberHelper === null) {
+		if (self::$__NumberHelper === null) {
 			App::import('Core', 'Helper');
 			App::import('Helper', 'App');
 			App::import('Helper', 'Number');
-			MiCompressor::$__NumberHelper = new NumberHelper();
+			self::$__NumberHelper = new NumberHelper();
 		}
 		if (!$string) {
 			return;
@@ -611,7 +617,7 @@ abstract class MiCompressor {
 		$oLength = strlen($string);
 		$lib = dirname(__FILE__) . DS . 'yuicompressor.jar';
 		$file = basename($filename);
-		MiCompressor::log("	Minifying $file");
+		self::log("	Minifying $file");
 		if (file_exists($filename)) {
 			$_filename = $filename;
 		} else {
@@ -619,34 +625,34 @@ abstract class MiCompressor {
 			$File->write($string);
 			$_filename = $File->pwd();
 		}
-		$minifyParams = MiCompressor::cRead('minify.params');
+		$minifyParams = self::cRead('minify.params');
 		if ($minifyParams === true) {
 			$minifyParams = '';
 		}
 		$cmd = "java -jar $lib $minifyParams " . $_filename;
-		if (MiCompressor::cRead('debug') > 1) {
-			MiCompressor::log("\t" . $cmd);
+		if (self::cRead('debug') > 1) {
+			self::log("\t" . $cmd);
 		}
 
-		$return = MiCompressor::_exec($cmd, $output);
+		$return = self::_exec($cmd, $output);
 
 		if (!$return) {
-			MiCompressor::log("PROBLEM: command failed: \$ $cmd");
+			self::log("PROBLEM: command failed: \$ $cmd");
 			return $string;
 		}
 		$_cmd = str_replace($_filename, $filename, $cmd);
 		$_cmd = str_replace(APP, '', $_cmd);
 		$_cmd = str_replace(CAKE_CORE_INCLUDE_PATH, 'ROOT', $_cmd);
-		MiCompressor::log("	\$ $_cmd");
+		self::log("	\$ $_cmd");
 		if (!empty($File)) {
 			$File->delete();
 		}
 		$return = implode($output, "\n");
 		$fLength = strlen($return);
 		$percent = round((1 - $fLength/$oLength) * 100);
-		$oSize = MiCompressor::$__NumberHelper->toReadableSize($oLength);
-		$fSize = MiCompressor::$__NumberHelper->toReadableSize($fLength);
-		MiCompressor::log("\tReduction: $percent% ($oSize to $fSize)");
+		$oSize = self::$__NumberHelper->toReadableSize($oLength);
+		$fSize = self::$__NumberHelper->toReadableSize($fLength);
+		self::log("\tReduction: $percent% ($oSize to $fSize)");
 		return $return;
 	}
 
@@ -672,7 +678,7 @@ abstract class MiCompressor {
 				$type = 'css';
 			}
 		}
-		$minify = MiCompressor::cRead('minify.' . $type, 'minify');
+		$minify = self::cRead('minify.' . $type, 'minify');
 
 		if ($minify) {
 			$min = '.min';
@@ -684,8 +690,8 @@ abstract class MiCompressor {
 			if (substr($request, - strlen($type)) === $type) {
 				$request = substr($request, 0, - strlen($type) - 1);
 			}
-			MiCompressor::log("$request.$type ...");
-			$return .= MiCompressor::loadRequest($request, $minify, $type) . "\r\n";
+			self::log("$request.$type ...");
+			$return .= self::loadRequest($request, $minify, $type) . "\r\n";
 		}
 		if (!$minify && $type === 'css') {
 			preg_match_all('/@import.*;/', $return, $matches);
@@ -720,19 +726,19 @@ abstract class MiCompressor {
  * @access public
  */
 	public static function serve($request = '', $type = null) {
-		MiCompressor::$loadedFiles = array();
-		MiCompressor::log('Request String: ' . $request);
+		self::$loadedFiles = array();
+		self::log('Request String: ' . $request);
 
 		$start = microtime(true);
 
 		if ($type === null) {
 			$type = array_pop(explode('.', $_GET['url']));
 		}
-		$requests = MiCompressor::listFiles($request, $type);
+		$requests = self::listFiles($request, $type);
 		if (!$requests) {
 			return false;
 		}
-		$fingerprint = MiCompressor::_fingerprint($request);
+		$fingerprint = self::_fingerprint($request);
 		$_request = str_replace($fingerprint, '', $request);
 		$_request = preg_replace('@\.min$@', '', $_request);
 		if (count($requests) > 1 && $request != $_request) {
@@ -742,21 +748,21 @@ abstract class MiCompressor {
 				$path = WWW_ROOT . $type . DS . $_request . '.' . $type;
 			}
 			if (file_exists($path)) {
-				MiCompressor::log("Uncompressed file exists ($path)");
-				MiCompressor::log("\tbypassing process method and using this file as input");
+				self::log("Uncompressed file exists ($path)");
+				self::log("\tbypassing process method and using this file as input");
 				$oString = file_get_contents($path);
-				$return = MiCompressor::minify($oString, $path);
+				$return = self::minify($oString, $path);
 			}
 		}
 		if (empty($return)) {
-			MiCompressor::$requestStack = array();
-			$return = MiCompressor::process($requests, $type);
-			if (!isset(MiCompressor::$requestMap[$type][$_request]['all'])) {
-				MiCompressor::$requestMap[$type][$_request]['all'] = MiCompressor::$requestStack;
-				MiCompressor::_populateRequestMap(true);
+			self::$requestStack = array();
+			$return = self::process($requests, $type);
+			if (!isset(self::$requestMap[$type][$_request]['all'])) {
+				self::$requestMap[$type][$_request]['all'] = self::$requestStack;
+				self::_populateRequestMap(true);
 			}
 		}
-		if (MiCompressor::cRead('store')) {
+		if (self::cRead('store')) {
 			if ($request[0] === '/') {
 				$path = WWW_ROOT . ltrim($request, '/') . '.' . $type;
 			} else {
@@ -765,33 +771,33 @@ abstract class MiCompressor {
 			if (count($requests) > 1 && strpos($path, '.min.')) {
 				$test = str_replace('.min.', '.', $path);
 				if (file_exists($test)) {
-					if (MiCompressor::$__NumberHelper === null) {
+					if (self::$__NumberHelper === null) {
 						App::import('Core', 'Helper');
 						App::import('Helper', 'App');
 						App::import('Helper', 'Number');
-						MiCompressor::$__NumberHelper = new NumberHelper();
+						self::$__NumberHelper = new NumberHelper();
 					}
 					$oString = file_get_contents($test);
 					$oLength = strlen($oString);
 					$fLength = strlen($return);
 					$percent = round((1 - $fLength/$oLength) * 100);
-					$oSize = MiCompressor::$__NumberHelper->toReadableSize($oLength);
-					$fSize = MiCompressor::$__NumberHelper->toReadableSize($fLength);
-					MiCompressor::log("Overall Reduction: $percent% ($oSize to $fSize)");
+					$oSize = self::$__NumberHelper->toReadableSize($oLength);
+					$fSize = self::$__NumberHelper->toReadableSize($fLength);
+					self::log("Overall Reduction: $percent% ($oSize to $fSize)");
 				}
 			}
 			$File = new File($path, true);
 			if (!$File->writable()) {
-				MiCompressor::log("PROBLEM: Couldn't open $path for writing");
+				self::log("PROBLEM: Couldn't open $path for writing");
 			} else {
 				$File->delete();
 				$bytes = strlen($return);
-				MiCompressor::log("Writing $path {$bytes} bytes");
+				self::log("Writing $path {$bytes} bytes");
 				$File->write($return);
 			}
 		}
-		if (MiCompressor::cRead('debug')) {
-			$return = MiCompressor::log() . $return;
+		if (self::cRead('debug')) {
+			$return = self::log() . $return;
 		}
 		return $return;
 	}
@@ -809,7 +815,7 @@ abstract class MiCompressor {
  * @access protected
  */
 	protected static function storePath($type, $filename) {
-		$min = MiCompressor::cRead('minify.' . $type);
+		$min = self::cRead('minify.' . $type);
 		if ($min) {
 			$min = '.min';
 		} else {
@@ -834,24 +840,24 @@ abstract class MiCompressor {
 			'type' => 'js',
 			'sizeLimit' => false,
 		), $params));
-		$concat = MiCompressor::cRead('concat');
-		if (!$concat && !MiCompressor::$requestMap) {
-			MiCompressor::_populateRequestMap();
+		$concat = self::cRead('concat');
+		if (!$concat && !self::$requestMap) {
+			self::_populateRequestMap();
 		}
-		$stack = MiCompressor::_flattenRequest($request, $type, !$concat);
+		$stack = self::_flattenRequest($request, $type, !$concat);
 		$return = array();
 		foreach ($stack as $files) {
 			if ($concat) {
-				$url = MiCompressor::_url($files, $type, $sizeLimit);
+				$url = self::_url($files, $type, $sizeLimit);
 				$return = array_merge($return, (array)$url);
 			} elseif ($files) {
 				foreach ($files as $file) {
-					$return[] = MiCompressor::_url($file, $type, $sizeLimit);
+					$return[] = self::_url($file, $type, $sizeLimit);
 				}
-				$filename = MiCompressor::filename($files);
-				if (empty(MiCompressor::$requestMap[$filename])) {
-					MiCompressor::$requestMap[$type][$filename]['direct'] = $files;
-					MiCompressor::_populateRequestMap(true);
+				$filename = self::filename($files);
+				if (empty(self::$requestMap[$filename])) {
+					self::$requestMap[$type][$filename]['direct'] = $files;
+					self::_populateRequestMap(true);
 				}
 			}
 		}
@@ -873,21 +879,21 @@ abstract class MiCompressor {
  * @access protected
  */
 	protected static function _addToStack($request = '', $type = 'js', $package = 'default', $expandDependencies = false) {
-		if (!empty(MiCompressor::$requestStack[$type]['*']) && in_array($request, MiCompressor::$requestStack[$type]['*'])) {
+		if (!empty(self::$requestStack[$type]['*']) && in_array($request, self::$requestStack[$type]['*'])) {
 			return;
 		}
-		MiCompressor::$requestStack[$type]['*'][] = $request;
+		self::$requestStack[$type]['*'][] = $request;
 		if ($expandDependencies === true) {
-			if (isset(MiCompressor::$map[$type][$request])) {
+			if (isset(self::$map[$type][$request])) {
 				$params = am(array('baseDir' => null, 'pattern' => null, 'dependencies' => null, 'virtual' => null),
-					MiCompressor::$map[$type][$request]);
-				MiCompressor::_handleDependency($request, $type, $package);
+					self::$map[$type][$request]);
+				self::_handleDependency($request, $type, $package);
 			} else {
 				$match = false;
-				foreach(MiCompressor::$map[$type] as $regex => $params) {
+				foreach(self::$map[$type] as $regex => $params) {
 					if (preg_match('@^' . $regex . '$@', $request)) {
 						$match = true;
-						MiCompressor::_handleDependency($request, $type, $package, $regex);
+						self::_handleDependency($request, $type, $package, $regex);
 						break;
 					}
 				}
@@ -899,7 +905,7 @@ abstract class MiCompressor {
 				return;
 			}
 		}
-		MiCompressor::$requestStack[$type][$package][] = $request;
+		self::$requestStack[$type][$package][] = $request;
 	}
 
 /**
@@ -933,20 +939,20 @@ abstract class MiCompressor {
 	protected static function _flatten($requests, $type = 'js', $package = 'default', $expandDependencies = false) {
 		foreach ((array)$requests as $key => $value) {
 			if (is_string($key)) {
-				MiCompressor::_addToStack($key, $type, $package, $expandDependencies);
+				self::_addToStack($key, $type, $package, $expandDependencies);
 				if ($value) {
 					foreach($value as $i => $file) {
-						MiCompressor::_addToStack("$key.$file", $type, $package, $expandDependencies);
+						self::_addToStack("$key.$file", $type, $package, $expandDependencies);
 					}
 				}
 			} else {
-				MiCompressor::_addToStack($value, $type, $package, $expandDependencies);
+				self::_addToStack($value, $type, $package, $expandDependencies);
 			}
 		}
-		if (empty(MiCompressor::$requestStack[$type][$package])) {
+		if (empty(self::$requestStack[$type][$package])) {
 			return false;
 		}
-		return MiCompressor::$requestStack[$type][$package];
+		return self::$requestStack[$type][$package];
 	}
 
 /**
@@ -962,20 +968,20 @@ abstract class MiCompressor {
  * @access protected
  */
 	protected static function _flattenRequest($request = array(), $type = 'js', $expandDependencies = false) {
-		MiCompressor::$requestStack[$type] = array();
+		self::$requestStack[$type] = array();
 		if ($expandDependencies) {
-			MiCompressor::_populateRequestMap();
+			self::_populateRequestMap();
 		}
 		foreach ($request as $package => &$files) {
-			$files = MiCompressor::_flatten($files, $type, $package, $expandDependencies);
+			$files = self::_flatten($files, $type, $package, $expandDependencies);
 			if (!$files) {
 				unset($request[$package]);
 				continue;
 			}
-			$filename = MiCompressor::filename($files);
-			if (isset(MiCompressor::$requestMap[$type][$filename]['all'])) {
-				MiCompressor::$requestStack[$type]['*'] = array_unique(array_merge(
-					MiCompressor::$requestStack[$type]['*'], MiCompressor::$requestMap[$type][$filename]['all']
+			$filename = self::filename($files);
+			if (isset(self::$requestMap[$type][$filename]['all'])) {
+				self::$requestStack[$type]['*'] = array_unique(array_merge(
+					self::$requestStack[$type]['*'], self::$requestMap[$type][$filename]['all']
 				));
 			}
 		}
@@ -997,23 +1003,23 @@ abstract class MiCompressor {
 		if ($key === null) {
 			$key = $request;
 		}
-		if(empty(MiCompressor::$map[$type][$key]['dependencies'])) {
+		if(empty(self::$map[$type][$key]['dependencies'])) {
 			return;
 		}
 		$params = am(array('baseDir' => null, 'pattern' => null, 'dependencies' => null, 'virtual' => null),
-			MiCompressor::$map[$type][$key]);
+			self::$map[$type][$key]);
 		foreach($params['dependencies'] as $i => $dependency) {
 			if ($dependency === $request) {
 				continue;
 			}
 			if (!strpos($dependency, '*')) {
-				MiCompressor::_addToStack($dependency, $type, $package, true);
+				self::_addToStack($dependency, $type, $package, true);
 				continue;
 			}
 			$dKey = str_replace(array('.', '*'), array('\.', '(.*)'), $dependency);
-			if (isset(MiCompressor::$map[$type][$dKey])) {
+			if (isset(self::$map[$type][$dKey])) {
 				$dParams = am(array('baseDir' => null, 'pattern' => null, 'dependencies' => null, 'virtual' => null),
-					MiCompressor::$map[$type][$dKey]);
+					self::$map[$type][$dKey]);
 				if ($dParams['pattern']) {
 					$segment = $dParams['baseDir'] . str_replace(array('\1'), array('(.*)'), $dParams['pattern']);
 				} else {
@@ -1021,20 +1027,20 @@ abstract class MiCompressor {
 				}
 				$replace = str_replace(array('*'), array('\1'), $dependency);
 				$regex = '@^' . $segment . '$@';
-				foreach(MiCompressor::$vendorMap as $k => $filename) {
+				foreach(self::$vendorMap as $k => $filename) {
 					if (preg_match($regex, $k)) {
 						$_dependency = preg_replace($regex, $replace, $k);
-						MiCompressor::_addToStack($_dependency, $type, $package, false);
+						self::_addToStack($_dependency, $type, $package, false);
 					}
 				}
 			} else {
 				$replace = str_replace(array('*'), array('\1'), $dependency);
 				$segment = $params['baseDir'] . str_replace(array('.', '*'), array('\.', '([^/]*)'), $dependency) . '\.' . $type;
 				$regex = '@^' . $segment . '$@';
-				foreach(MiCompressor::$vendorMap as $k => $filename) {
+				foreach(self::$vendorMap as $k => $filename) {
 					if (preg_match($regex, $k)) {
 						$_dependency = preg_replace($regex, $replace, $k);
-						MiCompressor::_addToStack($_dependency, $type, $package, false);
+						self::_addToStack($_dependency, $type, $package, false);
 					}
 				}
 			}
@@ -1053,12 +1059,12 @@ abstract class MiCompressor {
  * @access protected
  */
 	protected static function _includeFile($file) {
-		if (in_array($file, MiCompressor::$loadedFiles)) {
-			MiCompressor::log("\t... Skipping Duplicate");
+		if (in_array($file, self::$loadedFiles)) {
+			self::log("\t... Skipping Duplicate");
 			return;
 		}
 		$return = ''; //"\r/*$file*/\r";
-		MiCompressor::$loadedFiles[] = $file;
+		self::$loadedFiles[] = $file;
 		if (strpos($file, WWW_ROOT)) {
 			$return = file_get_contents($file);
 		} else {
@@ -1067,7 +1073,7 @@ abstract class MiCompressor {
 			$return = $return . ob_get_clean();
 		}
 		$bytes = strlen($return);
-		MiCompressor::log("\tAdding $file ($bytes bytes)");
+		self::log("\tAdding $file ($bytes bytes)");
 		return $return;
 	}
 
@@ -1091,25 +1097,25 @@ abstract class MiCompressor {
 			foreach($minPossibilities as &$path) {
 				$path = preg_replace('@\.([^\.]*)$@', '.min.$1', $path);
 			}
-			$return = MiCompressor::_includeFirst($minPossibilities, false, $type);
+			$return = self::_includeFirst($minPossibilities, false, $type);
 			if ($return) {
 				return $return;
 			}
 		}
 		$return = false;
 		foreach($possibilities as $i => $path) {
-			if (MiCompressor::cRead('debug') > 1) {
-				MiCompressor::log(' 	Looking for ' . $path);
+			if (self::cRead('debug') > 1) {
+				self::log(' 	Looking for ' . $path);
 			}
 			if ($path[0] == '/') {
 				if (file_exists($path)) {
-					$return = MiCompressor::_includeFile($path);
+					$return = self::_includeFile($path);
 					break;
 				}
 				continue;
-			} elseif (isset(MiCompressor::$vendorMap[$path])) {
-				$filename = MiCompressor::$vendorMap[$path];
-				$return = MiCompressor::_includeFile($filename);
+			} elseif (isset(self::$vendorMap[$path])) {
+				$filename = self::$vendorMap[$path];
+				$return = self::_includeFile($filename);
 				break;
 			}
 		}
@@ -1120,9 +1126,9 @@ abstract class MiCompressor {
 			$min = $matches[1];
 			preg_match('@\.([^\.]*)$@', $path, $matches);
 
-			if (isset(MiCompressor::$map[$type][$request])) {
+			if (isset(self::$map[$type][$request])) {
 				$params = am(array('baseDir' => null, 'pattern' => null, 'dependencies' => null, 'virtual' => null),
-					MiCompressor::$map[$type][$request]);
+					self::$map[$type][$request]);
 				if (isset($params['virtual']) && !$params['virtual']) {
 					$return = '';
 					break;
@@ -1131,12 +1137,12 @@ abstract class MiCompressor {
 				if ($min) {
 					$vendorKey = preg_replace('@\.([^\.]*)$@', '.min.$1', $vendorKey);
 				}
-				if (isset(MiCompressor::$vendorMap[$vendorKey])) {
-					$filename = MiCompressor::$vendorMap[$vendorKey];
-					$return = MiCompressor::_includeFile($filename);
+				if (isset(self::$vendorMap[$vendorKey])) {
+					$filename = self::$vendorMap[$vendorKey];
+					$return = self::_includeFile($filename);
 				}
 			} else {
-				foreach(MiCompressor::$map[$type] as $key => $params) {
+				foreach(self::$map[$type] as $key => $params) {
 					$regex = '@^' . str_replace(array('*'), array('[^/]*'), $key) . '$@';
 					if (!preg_match($regex, $request)) {
 						continue;
@@ -1157,9 +1163,9 @@ abstract class MiCompressor {
 					if ($min) {
 						$vendorKey = preg_replace('@\.([^\.]*)$@', '.min.$1', $vendorKey);
 					}
-					if (isset(MiCompressor::$vendorMap[$vendorKey])) {
-						$filename = MiCompressor::$vendorMap[$vendorKey];
-						$return = MiCompressor::_includeFile($filename);
+					if (isset(self::$vendorMap[$vendorKey])) {
+						$filename = self::$vendorMap[$vendorKey];
+						$return = self::_includeFile($filename);
 						break;
 					}
 				}
@@ -1167,14 +1173,14 @@ abstract class MiCompressor {
 		}
 		if (empty($return)) {
 			$matches = array();
-			foreach(MiCompressor::$vendorMap as $key => $filename) {
+			foreach(self::$vendorMap as $key => $filename) {
 				if (strpos($key, $path) && preg_match('@' . $path . '$@', $key)) {
 					$matches[strlen($key) . $key] = $filename;
 				}
 			}
 			ksort($matches);
 			foreach($matches as $filename) {
-				$return = MiCompressor::_includeFile($filename);
+				$return = self::_includeFile($filename);
 				if ($return) {
 					break;
 				}
@@ -1183,13 +1189,13 @@ abstract class MiCompressor {
 
 		if (!$return && $minify) {
 			if ($return === false) {
-				MiCompressor::log("PROBLEM: No file found for $path");
+				self::log("PROBLEM: No file found for $path");
 				return false;
 			}
 			return;
 		}
 		if ($minify) {
-			return MiCompressor::minify($return, basename($path));
+			return self::minify($return, basename($path));
 		}
 		return $return;
 	}
@@ -1203,32 +1209,27 @@ abstract class MiCompressor {
  * @access protected
  */
 	protected static function _populateRequestMap($write = false, $load = null) {
-		$cacheFile = CACHE . MiCompressor::cRead('cacheFile');
-		if (empty(MiCompressor::$requestMap) || $load) {
+		$cacheFile = CACHE . self::cRead('cacheFile');
+		if (empty(self::$requestMap) || $load) {
 			if (file_exists($cacheFile)) {
 				include($cacheFile);
-				MiCompressor::$requestMap = $config['requestMap'];
+				self::$requestMap = $config['requestMap'];
 			} else {
-				MiCompressor::$requestMap = array();
+				self::$requestMap = array();
 			}
 		}
-		if (empty(MiCompressor::$requestMap['urlPrefix'])) {
+		if (empty(self::$requestMap['urlPrefix'])) {
 			if (class_exists('Router')) {
-				MiCompressor::$requestMap['urlPrefix'] = Router::url('/');
-				if (MiCompressor::$requestMap['urlPrefix'] === '/') {
-					MiCompressor::$requestMap['urlPrefix'] = '';
+				self::$requestMap['urlPrefix'] = Router::url('/');
+				if (self::$requestMap['urlPrefix'] === '/') {
+					self::$requestMap['urlPrefix'] = '';
 				}
 			} else {
-				MiCompressor::$requestMap['urlPrefix'] = '';
+				self::$requestMap['urlPrefix'] = '';
 			}
 		}
 
 		if (!$write) {
-			if (file_exists(CONFIGS . 'mi_asset.php')) {
-				// while reading for the first time - allow loading a config file which can modify
-				// static public vars
-				require_once CONFIGS . 'mi_asset.php';
-			}
 			return;
 		}
 		if (file_exists($cacheFile)) {
@@ -1242,7 +1243,7 @@ abstract class MiCompressor {
 			include($cacheFile);
 			if (!empty($config)) {
 				$merged = $config['requestMap'];
-				foreach(MiCompressor::$requestMap as $type => $sets) {
+				foreach(self::$requestMap as $type => $sets) {
 					if (is_array($sets)) {
 						foreach($sets as $set => $values) {
 							$merged[$type][$set] = $values;
@@ -1251,25 +1252,25 @@ abstract class MiCompressor {
 						$merged[$type] = $sets;
 					}
 				}
-				MiCompressor::$requestMap = $merged;
+				self::$requestMap = $merged;
 			}
 		}
 
-		MiCompressor::log('Updating config file');
-		foreach(MiCompressor::$requestMap as $type => &$stuff) {
+		self::log('Updating config file');
+		foreach(self::$requestMap as $type => &$stuff) {
 			if (is_array($stuff)) {
 				ksort($stuff);
 			}
 		}
-		ksort(MiCompressor::$requestMap);
-		$string = "<?php\n\$config['requestMap'] = " . var_export(MiCompressor::$requestMap, true) . ';';
+		ksort(self::$requestMap);
+		$string = "<?php\n\$config['requestMap'] = " . var_export(self::$requestMap, true) . ';';
 		ftruncate($fp, 0);
 		fwrite($fp, $string);
 		fclose($fp);
 		/* Trust in flock
-		   $return = MiCompressor::_exec('php -l ' . escapeshellarg($cacheFile), $_);
+		   $return = self::_exec('php -l ' . escapeshellarg($cacheFile), $_);
 		if ($return !== 0) {
-			trigger_error('MiCompressor::_populateRequestMap the written config file contains a parse error and has been deleted');
+			trigger_error('self::_populateRequestMap the written config file contains a parse error and has been deleted');
 			unlink($cacheFile);
 		}
 		*/
@@ -1284,7 +1285,7 @@ abstract class MiCompressor {
  * @access protected
  */
 	protected static function _populateVendorMap($reset = false) {
-		if ($reset || !MiCompressor::$vendorMap) {
+		if ($reset || !self::$vendorMap) {
 			$plugins = MiCache::mi('plugins');
 			foreach($plugins as $path => $plugin) {
 				if (is_dir($path . DS . 'webroot')) {
@@ -1294,18 +1295,18 @@ abstract class MiCompressor {
 					$files = Mi::files($path . DS . 'webroot', null, '.*\.(css|js)$');
 					foreach($files as $fPath) {
 						$fPath = realpath($fPath);
-						MiCompressor::$vendorMap[str_replace(realpath($path . DS . 'webroot') . DS, $plugin . DS, $fPath)] = $fPath;
+						self::$vendorMap[str_replace(realpath($path . DS . 'webroot') . DS, $plugin . DS, $fPath)] = $fPath;
 					}
 				}
 			}
 
 			App::import('Vendor', 'Mi.MiCache');
-			MiCompressor::log("Populating Vendor Map");
+			self::log("Populating Vendor Map");
 			if (!class_exists('MiCache')) {
-				MiCompressor::log("\tMiCache doesn't exist. Skipping.");
+				self::log("\tMiCache doesn't exist. Skipping.");
 				return;
 			}
-			MiCompressor::$vendorMap = am(MiCompressor::$vendorMap, MiCache::mi('vendors',
+			self::$vendorMap = am(self::$vendorMap, MiCache::mi('vendors',
 				null,
 				array('shells'),
 				array(
@@ -1314,7 +1315,7 @@ abstract class MiCompressor {
 					'excludePattern' => false
 				)
 			));
-			MiCompressor::log("\tDone.");
+			self::log("\tDone.");
 		}
 	}
 
@@ -1329,28 +1330,28 @@ abstract class MiCompressor {
  * @access protected
  */
 	protected static function _url($files, $type = 'js', $sizeLimit = false) {
-		$filename = MiCompressor::filename((array)$files);
-		if (!isset(MiCompressor::$requestMap[$type][$filename]['direct'])) {
-			MiCompressor::$requestMap[$type][$filename]['direct'] = $files;
-			MiCompressor::_populateRequestMap(true);
+		$filename = self::filename((array)$files);
+		if (!isset(self::$requestMap[$type][$filename]['direct'])) {
+			self::$requestMap[$type][$filename]['direct'] = $files;
+			self::_populateRequestMap(true);
 		}
 		if ($sizeLimit && count($files) > 1) {
-			$storePath = MiCompressor::storePath($type, $filename);
+			$storePath = self::storePath($type, $filename);
 			if (file_exists($storePath) && filesize($storePath) > ($sizeLimit - 45)) {
 				foreach($files as $file) {
-					$return[] = MiCompressor::_url(array($file), $type);
+					$return[] = self::_url(array($file), $type);
 				}
 				return $return;
 			}
 		}
-		$min = MiCompressor::cRead('minify.' . $type);
+		$min = self::cRead('minify.' . $type);
 		if ($min) {
 			$min = '.min';
 		} else {
 			$min = '';
 		}
 		if (count($files) > 1 || $min) {
-			$fingerprint = MiCompressor::_fingerprint($files);
+			$fingerprint = self::_fingerprint($files);
 		} else {
 			$fingerprint = '';
 		}
