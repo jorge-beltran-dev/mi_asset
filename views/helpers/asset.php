@@ -110,7 +110,7 @@ class AssetHelper extends AppHelper {
 		$this->__jsViewStack = $this->__jsStack;
 		$this->__jsStack = array('default' => array());
 		$this->__scriptsView = $this->__scripts;
-		$this->__scripts = array();
+		$this->__scripts = '';
 	}
 
 /**
