@@ -162,37 +162,6 @@ abstract class MiCompressor {
 			),
 		),
 		'css' => array(
-			'/js/theme/ui.all' => array(
-				'baseDir' => 'jquery.ui/themes/base/',
-				'dependencies' => array(
-					'/js/theme/ui.base',
-					'/js/theme/ui.theme',
-				),
-				'virtual' => true,
-			),
-			'/js/theme/ui.base' => array(
-				'baseDir' => 'jquery.ui/themes/base/',
-				'pattern' => 'ui.base.css',
-				'dependencies' => array(
-					'/js/theme/ui.core',
-					'/js/theme/ui.accordion',
-					'/js/theme/ui.datepicker',
-					'/js/theme/ui.dialog',
-					'/js/theme/ui.progressbar',
-					'/js/theme/ui.resizable',
-					'/js/theme/ui.slider',
-					'/js/theme/ui.tabs',
-				),
-				'virtual' => true,
-			),
-			'/js/theme/ui\.(.*)' => array(
-				'baseDir' => 'jquery.ui/themes/base/',
-				'pattern' => 'ui.\1.css',
-				'dependencies' => array(
-					'/js/theme/ui.core',
-					'/js/theme/ui.theme',
-				)
-			)
 		)
 	);
 
