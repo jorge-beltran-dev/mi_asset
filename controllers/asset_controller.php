@@ -174,10 +174,11 @@ class AssetController extends MiAssetAppController {
 
 		if (file_exists(WWW_ROOT . $this->params['url']['url'])) {
 			return true;
-		} elseif (file_exists(WWW_ROOT . 'js' . DS . 'theme' . DS . 'ui.theme.css')) {
+		} elseif (file_exists(WWW_ROOT . 'js' . DS . 'theme' . DS . 'jquery.ui.theme.css')) {
 			/*
 			   The theme does exist - so it's likely a bad request
 		    */
+			touch(WWW_ROOT . $this->params['url']['url']);
 			return false;
 		}
 		touch(TMP . 'theme.lock');
