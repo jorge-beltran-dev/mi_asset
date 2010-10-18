@@ -1327,9 +1327,14 @@ abstract class MiCompressor {
 		if (substr($filename, 0, 4) === 'http') {
 				return $filename;
 		} elseif ($filename[0] === '/') {
-			return "{$filename}{$min}.$type";
+			$return = "{$filename}{$min}.$type";
+		} else {
+			$return = "/$type/$filename{$fingerprint}{$min}.$type";
 		}
-		return "/$type/$filename{$fingerprint}{$min}.$type";
+		if (Configure::read() && file_exists(WWW_ROOT . $return) ) {
+			$return .= '?v=' . filemtime(WWW_ROOT . $return);
+		}
+		return $return;
 	}
 
 /**
