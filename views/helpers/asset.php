@@ -217,6 +217,42 @@ class AssetHelper extends AppHelper {
 	}
 
 /**
+ * promotePackage method
+ *
+ * Used to force/change the order js pacakges are rendered.
+ *
+ * if you've got the following code:
+ * 	$this->Asset->js('general');
+ * 	...
+ * 	if ($needSpecialStuff) {
+ * 		$this->Asset->js('specific', 'special-stuff');
+ * 	}
+ *
+ * 	and due to execution order specific is added after general, you can still force specific to
+ * 	be higher in the source code order by issuing:
+ * 		$this->Asset->promotePackage('special-stuff');
+ *
+ * It doesn't matter if you call it before or after the js file has been added - it'll change the
+ * order packages are processed
+ *
+ * @param mixed $package
+ * @param string $type 'js'
+ * @return void
+ * @access public
+ */
+	function promotePackage($package, $type = 'js') {
+		$var = '__' . $type . 'Stack';
+		if (empty($this->{$var}[$package])) {
+			$stack = array();
+		} else {
+			$stack =& $this->{$var}[$package];
+			unset($this->{$var}[$package]);
+		}
+		$this->{$var} = array($package => $stack) + $this->{$var};
+		return true;
+	}
+
+/**
  * out method
  *
  * If $sizeLimit is true, files are auto-restricted to 25K for mobile devices, else the value
