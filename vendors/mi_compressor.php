@@ -1255,6 +1255,7 @@ abstract class MiCompressor {
  */
 	protected static function _populateVendorMap($reset = false) {
 		if ($reset || !self::$vendorMap) {
+			App::import('Vendor', 'Mi.MiCache');
 			$plugins = MiCache::mi('plugins');
 			foreach($plugins as $path => $plugin) {
 				if (is_dir($path . DS . 'webroot')) {
@@ -1269,7 +1270,6 @@ abstract class MiCompressor {
 				}
 			}
 
-			App::import('Vendor', 'Mi.MiCache');
 			self::log("Populating Vendor Map");
 			if (!class_exists('MiCache')) {
 				self::log("\tMiCache doesn't exist. Skipping.");
