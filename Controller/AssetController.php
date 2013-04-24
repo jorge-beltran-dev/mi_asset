@@ -103,8 +103,8 @@ class AssetController extends MiAssetAppController {
  * @access public
  */
 	function serve() {
-		$url = ltrim($this->params['url']['url'], '/');
-		$message = 'Request for: ' . Router::url('/' . $this->params['url']['url'], true) . ' from ' . $this->referer();
+		$url = ltrim($this->params->url, '/');
+		$message = 'Request for: ' . Router::url('/' . $this->params->url, true) . ' from ' . $this->referer();
 		$this->autoRender = false;
 
 		if (!preg_match('@/?(css|js)@', $url)) {
@@ -118,7 +118,7 @@ class AssetController extends MiAssetAppController {
 			$this->redirect('/' . ltrim($this->params['url']['url'], '/'));
 		}
 
-		if (preg_match('@.*\.(?:png|bmp|jpg|jpeg|gif)$@', $this->params['url']['url'])) {
+		if (preg_match('@.*\.(?:png|bmp|jpg|jpeg|gif)$@', $this->params->url)) {
 			return $this->_missingImage($message);
 		}
 

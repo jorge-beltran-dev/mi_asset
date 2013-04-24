@@ -44,8 +44,7 @@ class AssetHelper extends AppHelper {
  * @access public
  */
 	var $helpers = array(
-		'Html',
-		'Javascript'
+		'Html'
 	);
 
 /**
@@ -129,7 +128,7 @@ class AssetHelper extends AppHelper {
  */
 	function codeBlock($script = null, $options = array()) {
 		$options['inline'] = true;
-		$this->__scripts .= $this->Javascript->codeBlock($script, $options);
+		$this->__scripts .= $this->Html->scriptBlock($script, $options);
 	}
 
 /**
@@ -347,7 +346,7 @@ class AssetHelper extends AppHelper {
 		$return = array();
 		foreach((array)$urls as $url) {
 			$url = str_replace($this->webroot, '/', $this->url($url));
-			$return[] = $this->Javascript->link($url);
+			$return[] = $this->Html->script($url);
 		}
 		$return[] = $this->__scripts . $this->__scriptsView;
 		$this->__scripts = $this->__scriptsView = '';

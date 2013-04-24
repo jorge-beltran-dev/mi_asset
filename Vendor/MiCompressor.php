@@ -320,10 +320,10 @@ abstract class MiCompressor {
 			$minify = self::cRead('minify.css', 'minify');
 			$minify = self::cRead('minify.js', 'minify');
 
-			if (file_exists(CONFIGS . 'mi_asset.php')) {
+			if (file_exists(APP . 'Config' . DS . 'mi_asset.php')) {
 				// while reading for the first time - allow loading a config file which can modify
 				// static public vars
-				require_once CONFIGS . 'mi_asset.php';
+				require_once APP . 'Config' . DS . 'mi_asset.php';
 			}
 		}
 		if (array_key_exists($setting, self::$settings)) {
@@ -1359,6 +1359,6 @@ abstract class MiCompressor {
 		if ($fingerprint) {
 			return '.' . $fingerprint;
 		}
-		return '.' . filemtime(CONFIGS . 'bootstrap.php');
+		return '.' . filemtime(APP . 'Config' . DS . 'bootstrap.php');
 	}
 }
